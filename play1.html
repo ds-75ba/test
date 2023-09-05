@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>播放器</title>
+    <link href="https://vjs.zencdn.net/8.5.2/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.5.2/video.min.js"></script>
+    <!-- <link rel="stylesheet" href="videoplayer.css"> -->
+    <style>
+        .vjs-modal-dialog-content {
+            font-size: 2em !important;
+            display: block;
+            align-items: center;
+            /* 垂直方向上对齐方式为靠上 */
+            justify-content: center;
+            /* 水平方向上居中对齐 */
+            height: 20% !important;
+            /* 容器的高度 */
+            text-align: center;
+        }
+
+        .modal-button {
+            text-align: center !important;
+            display: flex !important;
+            width: 400px !important;
+            margin: auto !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        .currentTime {
+            display: block !important;
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="activateQuestion()">开启提问</button>
+    <button onclick="closeQuestion()">关闭提问</button><br>
+    <video id="videoPlayer" class="video-js vjs-default-skin" width="1280px" height="720px" data-setup='{}' controls>
+    </video>
+    <script>
+        var interval = null;
+        var source = { src: "1.mp4", type: "video/mp4" }
+        var questionTimes = [];
+        var questions = [];
+        var answers = [];
+        var explanations = [];
+        var nextQuestionTime = 0;
+        var nextQuestion = null;
+        var nextAnswer = null;
+        var nextExplanation = null;
+        var modal = null;
+
+
+        function findNextQuestion(target, array) {
+            let left = 0;
+            let right = array.length - 1;
+            let resultIndex = 0;
+
+            while (left <= right) {
+                let mid = Math.floor((left + right) / 2);
+
+                if (array[mid] > target) {
+                    resultIndex = mid;
+                    right = mid - 1;
+                } else {
+                    left = mid + 1;
+                }
+            }
+            return resultIndex;
+        }
+        function showQuestion() {
+            modal = player.createModal('', options = {
+                content: 'question', // 提供模态框展示的内容
+                description: '', // 模态的文本描述，主要用于可访问性
+                pauseOnOpen: true, // 模态框显示的时候是否停止播放
+                temporary: false, // 为 ture 时表示一个一次性模态框，关闭后就会被销毁
+                fillAlways: true, // 通常，模态框只有在第一次打开时才会自动填充。这告诉模态在每次打开时刷新其内容。
+                label: '', // Modal 的文本标签，主要用于可访问性
+                uncloseable: true, // 如果为 true，用户将无法通过 UI 关闭，程序关闭仍然是可能的。
+            });
+
+
+            modal.on('modalclose', function () {
+                updateQuestion(findNextQuestion(player.currentTime() + 0.1, questionTimes));
+                player.play();
+            });
+
+            modal.fillWith(nextQuestion)
+            modal.addChild('button', {
+                controlText: '应该',
+                className: 'vjs-visible-text modal-button',
+                clickHandler: function (event) {
+                    showAnswer("应该");
+                }
+            });
+            // modal.addChild('button', {
+            //     controlText: '跳过',
+            //     className: 'vjs-visible-text modal-button',
+            //     clickHandler: function (event) {
+            //         showAnswer();
+            //     }
+            // });
+            modal.addChild('button', {
+                controlText: '不应该',
+                className: 'vjs-visible-text modal-button',
+                clickHandler: function (event) {
+                    showAnswer("不应该");
+                }
+            });
+        }
+
+        function showAnswer(selected) {
+            var correct = selected == nextAnswer ? "回答正确" : "回答错误";
+
+            modal.fillWith(nextExplanation);
+            modal.addChild('button', {
+                controlText: '点击继续',
+                className: 'vjs-visible-text modal-button',
+                clickHandler: function (event) {
+                    modal.close();
+                }
+            });
+
+            modal.addChild('button', {
+                controlText: correct,
+                className: 'vjs-visible-text modal-button'
+            });
+        }
+        function activateQuestion() {
+            var fileContent = `5-1 红衣女是否该向前轮转？-不应该-因为女队员在后场时，若球在底线附近，不宜轮转，应在前发球线之前轮转，也就是对方回球不到位的情况下。
+74-2 轮红衣女是否该跟进？-应该-左右防守时，无论男队员还是女队员将球挡到对方空当区域时，均应女队员跟进。
+99-3 红衣男是否应该后退？-应该-男队员接发球时，若挡网或拨球质量高，则应该后退轮转。
+130-4 白衣女是否应该跟进？-应该-左右相持时，无论男队员还是女队员将球挡到对方空当区域时，均应女队员跟进抢网。
+158-5 红衣女是否应该向前？-应该-女队员在中后半场吊杀时，男队员在中场附近，两人距离较近时，应该跟进轮转。
+261-6 红衣女是否应该跟进？-应该-左右防守时，抽球质量较好时，应该跟进轮转。
+298-7 白衣女是否应该向前轮转？-不应该-男队员在中前场，且与女队员在同一半区，不适宜轮转，男队员在场地中间区域时事宜轮转。
+322-8 白衣女是否应该向前轮转？-应该-男队员抽对角，造成对手被动时，女队员应该跟进。
+330-9 红衣女是否应该向前轮转？-应该-女队员抽直线，造成对手被动时，应该跟进。
+462-10 红衣女是否应该向前轮转？-应该-此时杀球位置在中后场，且男队员在中场，但由于两人配合问题（红衣男抢球），导致轮转失败。
+564-11 白衣女是否应该向前轮转？-应该-女队员接杀挡网至对手空当区，应该跟进。
+803-12 白衣女是否应该跟进？-应该-防守转进攻时，挡网后，且对手下手击球，可以跟进轮转。
+1055-13 红衣女是否应该向前轮转？-应该-红衣女在中后场杀球，此时男搭档在中场位置，可以轮转。
+1088-14 白衣男是否应该后退？-应该-拨中半场后应该轮转。
+1227-15 白衣女是否应该跟进？-应该-守转攻时女队员抽直线后，对手已经被动，应该跟进。`
+
+            var lines = fileContent.split('\n');
+            lines.forEach(function (line) {
+                var parts = line.trim().split('-');
+
+                if (parts.length === 4) {
+                    questionTimes.push(parseFloat(parts[0]));
+                    questions.push(parts[1]);
+                    answers.push(parts[2]);
+                    explanations.push(parts[3]);
+                }
+            });
+            updateQuestion(findNextQuestion(player.currentTime(), questionTimes));
+        }
+        function closeQuestion() {
+            if (modal != null && modal.opened_) {
+                modal.close();
+            }
+            nextQuestionTime = 0;
+            nextQuestion = null;
+            nextAnswer = null;
+            nextExplanation = null;
+        }
+
+
+
+        function updateQuestion(index) {
+            nextQuestionTime = questionTimes[index];
+            nextQuestion = questions[index];
+            nextAnswer = answers[index];
+            nextExplanation = explanations[index];
+        }
+
+
+        var player = videojs('videoPlayer', {
+            controls: true, // 是否显示控制条
+            //   poster: 'xxx', // 视频封面图地址
+            currentTimeDisplay: true,
+            preload: 'auto',
+            autoplay: false,
+            playbackRates: [0.25, 0.5, 1, 1.5, 2, 4],
+            language: 'zh-CN', // 设置语言
+            muted: false, // 是否静音
+        }, function () {
+            console.log('视频可以播放了');
+        });
+
+        player.on('play', function () {
+            interval = setInterval(function () {
+                if (nextQuestionTime > player.currentTime() && nextQuestionTime - player.currentTime() < 0.1) {
+                    showQuestion()
+                }
+                // console.log(player.currentTime())
+            }, 100);
+        });
+        player.on('pause', function () {
+            clearInterval(interval);
+            // updateQuestion(findNextQuestion(player.currentTime() + 0.1, questionTimes));
+        });
+        player.on('seeked', function () {
+            updateQuestion(findNextQuestion(player.currentTime(), questionTimes));
+        });
+
+        player.src(source);
+        player.load(source);
+        activateQuestion();
+    </script>
+</body>
+
+</html>
