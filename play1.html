@@ -36,6 +36,9 @@
 </head>
 
 <body>
+    <p>请选择视频
+        <input type="file" id="videoFile" accept="video/*" />
+    </p>
     <button onclick="activateQuestion()">开启提问</button>
     <button onclick="closeQuestion()">关闭提问</button><br>
     <video id="videoPlayer" class="video-js vjs-default-skin" width="1280px" height="720px" data-setup='{}' controls>
@@ -208,8 +211,13 @@
             updateQuestion(findNextQuestion(player.currentTime(), questionTimes));
         });
 
-        player.src(source);
-        player.load(source);
+        document.getElementById('videoFile').addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            var url = URL.createObjectURL(file);
+            player.getChild('ControlBar').getChild('currentTimeDisplay').addClass('currentTime');
+            player.src({ src: url, type: file.type })
+            player.load({ src: url, type: file.type })
+        });
         activateQuestion();
     </script>
 </body>
