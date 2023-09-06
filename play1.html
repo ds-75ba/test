@@ -36,9 +36,6 @@
 </head>
 
 <body>
-    <p>请选择视频
-        <input type="file" id="videoFile" accept="video/*" />
-    </p>
     <button onclick="activateQuestion()">开启提问</button>
     <button onclick="closeQuestion()">关闭提问</button><br>
     <video id="videoPlayer" class="video-js vjs-default-skin" width="1280px" height="720px" data-setup='{}' controls>
@@ -163,24 +160,24 @@
             updateQuestion(findNextQuestion(player.currentTime(), questionTimes));
         }
         function closeQuestion() {
-            if (modal != null && modal.opened_) {
+            if (modal != null) {
                 modal.close();
             }
             nextQuestionTime = 0;
             nextQuestion = null;
             nextAnswer = null;
             nextExplanation = null;
+            questionTimes = [];
+            questions = [];
+            answers = [];
+            explanations = [];
         }
-
-
-
         function updateQuestion(index) {
             nextQuestionTime = questionTimes[index];
             nextQuestion = questions[index];
             nextAnswer = answers[index];
             nextExplanation = explanations[index];
         }
-
 
         var player = videojs('videoPlayer', {
             controls: true, // 是否显示控制条
@@ -191,33 +188,39 @@
             playbackRates: [0.25, 0.5, 1, 1.5, 2, 4],
             language: 'zh-CN', // 设置语言
             muted: false, // 是否静音
+            sources: [{
+                src: 'https://vali01.cp31.ott.cibntv.net/6774DB446364171CB84CA2998/03000B15006415BA380DBABC2ECAB7C36A3511-AC1F-4783-BF21-65A6CDD70B69.mp4?ccode=0512&duration=199&expire=18000&psid=c2658b546234d9eb03e7e0bcbe14bff041346&ups_client_netip=daf932ac&ups_ts=1693969791&ups_userid=&utid=99h%2BHcCtvxYCAdr5MqwCer49&vid=XNTk0OTQ0MDEwMA%3D%3D&vkey=Bb036cec5ebf25eecb6e3b888e3d622eb&s=cbfeea40af714988b30c&eo=0&t=ce738a0fe9b9daa&cug=1&fms=0a827d98827a0775&tr=4182&le=81f9693d107ac53d410959a580a4e9a2&ckt=1&m_onoff=0&rid=2000000030C634F3A98F2416570349F90CD8927602000000&type=mp4hd2v2&bc=2&dre=u144&si=563&dst=1&app_ver=1.10.1.1',
+                type: 'video/mp4'
+            }
+            ]
         }, function () {
             console.log('视频可以播放了');
         });
-
+        player.getChild('ControlBar').getChild('currentTimeDisplay').addClass('currentTime');
         player.on('play', function () {
             interval = setInterval(function () {
                 if (nextQuestionTime > player.currentTime() && nextQuestionTime - player.currentTime() < 0.1) {
                     showQuestion()
                 }
-                // console.log(player.currentTime())
             }, 100);
         });
         player.on('pause', function () {
             clearInterval(interval);
-            // updateQuestion(findNextQuestion(player.currentTime() + 0.1, questionTimes));
         });
         player.on('seeked', function () {
             updateQuestion(findNextQuestion(player.currentTime(), questionTimes));
         });
 
-        document.getElementById('videoFile').addEventListener('change', function (e) {
-            var file = e.target.files[0];
-            var url = URL.createObjectURL(file);
-            player.getChild('ControlBar').getChild('currentTimeDisplay').addClass('currentTime');
-            player.src({ src: url, type: file.type })
-            player.load({ src: url, type: file.type })
-        });
+        // var source = { src: 'https://vali01.cp31.ott.cibntv.net/6774DB446364171CB84CA2998/03000B15006415BA380DBABC2ECAB7C36A3511-AC1F-4783-BF21-65A6CDD70B69.mp4?ccode=0512&duration=199&expire=18000&psid=c2658b546234d9eb03e7e0bcbe14bff041346&ups_client_netip=daf932ac&ups_ts=1693969791&ups_userid=&utid=99h%2BHcCtvxYCAdr5MqwCer49&vid=XNTk0OTQ0MDEwMA%3D%3D&vkey=Bb036cec5ebf25eecb6e3b888e3d622eb&s=cbfeea40af714988b30c&eo=0&t=ce738a0fe9b9daa&cug=1&fms=0a827d98827a0775&tr=4182&le=81f9693d107ac53d410959a580a4e9a2&ckt=1&m_onoff=0&rid=2000000030C634F3A98F2416570349F90CD8927602000000&type=mp4hd2v2&bc=2&dre=u144&si=563&dst=1&app_ver=1.10.1.1', type: 'video/mp4' };
+        // player.src(source);
+        // player.load(source);
+        // document.getElementById('videoFile').addEventListener('change', function (e) {
+        //     var file = e.target.files[0];
+        //     var url = URL.createObjectURL(file);
+        //     player.getChild('ControlBar').getChild('currentTimeDisplay').addClass('currentTime');
+        //     player.src({ src: url, type: file.type })
+        //     player.load({ src: url, type: file.type })
+        // });
         activateQuestion();
     </script>
 </body>
